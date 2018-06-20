@@ -121,7 +121,7 @@ int main(int argc, const char **argv) {
       if (pipeline_depth <= 0) throw std::logic_error("Pipeline depth (" + std::string(argv[3]) + ") must be a positive integer");
       const auto pipeline_width = std::atoi(argv[4]);
       if (pipeline_width <= 0) throw std::logic_error("Pipeline width ("  + std::string(argv[4]) + ") must be a positive integer");
-      const auto run_sketch_prepocessor = ((argc >= 6) and (std::string(argv[5]) == "yes")) ? true : false;
+     // const auto run_sketch_prepocessor = ((argc >= 6) and (std::string(argv[5]) == "yes")) ? true : false;
       const auto pass_list = (argc == 7) ? split(std::string(argv[6]), ","): split(default_pass_list, ",");
 
       if (argc > 7) {
@@ -137,13 +137,23 @@ int main(int argc, const char **argv) {
       passes_to_run.emplace_back([pipeline_depth, pipeline_width] () { return std::make_unique<SinglePass<const uint32_t, const uint32_t>>(partitioning_transform, pipeline_depth, pipeline_width); } );
 
       // add the passes for the sketch preprocessor and backend
-      if (run_sketch_prepocessor) passes_to_run.emplace_back([] () { return std::make_unique<DefaultSinglePass>(sketch_preprocessor); });
+     // if (run_sketch_prepocessor) passes_to_run.emplace_back([] () { return std::make_unique<DefaultSinglePass>(sketch_preprocessor); });
       passes_to_run.emplace_back([atom_template_file] () { return std::make_unique<SinglePass<const std::string>>(sketch_backend_transform, atom_template_file); });
 
       /// Process them one after the other
-      std::cout << std::accumulate(passes_to_run.begin(), passes_to_run.end(), string_to_parse, [] (const auto & current_output, const auto & pass_functor __attribute__((unused)))
+      std::string result=std::accumulate(passes_to_run.begin(), passes_to_run.end(), string_to_parse, [] (const auto & current_output, const auto & pass_functor __attribute__((unused)))
                                    { return (*pass_functor())(current_output); });
-
+      std::cout<<std::endl;
+       if (result.back()=='S')
+      {
+	passes_to_run.pop_back();
+	passes_to_run.emplace_back([] () { return std::make_unique<DefaultSinglePass>(sketch_preprocessor); });
+	passes_to_run.emplace_back([atom_template_file] () { return std::make_unique<SinglePass<const std::string>>(sketch_backend_transform, atom_template_file); });
+	/// Process them one after the other
+        std::cout << std::accumulate(passes_to_run.begin(), passes_to_run.end(), string_to_parse, [] (const auto & current_output, const auto & pass_functor __attribute__((unused)))
+                                   { return (*pass_functor())(current_output); });
+        std::cout<<std::endl;
+      }
       return EXIT_SUCCESS;
     } else {
       print_usage();

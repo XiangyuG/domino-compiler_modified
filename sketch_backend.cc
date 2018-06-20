@@ -204,7 +204,17 @@ std::string sketch_backend_transform(const TranslationUnitDecl * tu_decl, const 
   // All the work is done by sketch, this is just perfunctory
   // to make sure the domino top-level doesn't complain about not
   // returning a string.
-  return "DONE";
+  static int debug_record=debug_count;
+  static int time=0;
+  time++;
+  if ((debug_record==debug_count && time!=1)||(time==1 && debug_record==0))
+  {
+  return "DONE";}
+  else
+  {
+  debug_record=debug_count;
+  return "DONE_BUT_NOT_SUCCESS";
+  }
 }
 
 std::string create_sketch_spec(const Stmt * function_body, const std::string & spec_name) {
